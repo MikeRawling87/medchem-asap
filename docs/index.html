@@ -101,6 +101,11 @@ main{padding:12px 12px calc(env(safe-area-inset-bottom) + 86px);max-width:760px;
 mark{background:var(--amber-soft);color:inherit;border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--amber)}
 .sechead{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 4px 10px}
 .sechead b{color:var(--amber)}
+.tag.nw{background:var(--teal);color:#fff}
+@media (prefers-color-scheme:dark){.tag.nw{color:#0b1514}}
+.caught{display:flex;flex-direction:column;align-items:center;gap:2px;margin:18px 0 16px;color:var(--muted)}
+.caught span{font-weight:700;color:var(--green);font-size:14.5px}
+.caught small{font-size:12px;letter-spacing:.06em;text-transform:uppercase}
 .abadge{background:var(--amber);color:#fff;border-radius:99px;padding:0 6px;font-size:12px;font-weight:700;margin-left:-2px}
 .alist .row b{cursor:pointer}
 .home{display:grid;gap:12px;margin-top:4px}
@@ -371,6 +376,8 @@ function showUpdated() {
   $("#updated").textContent = "Updated " + g.toLocaleString("en-GB", {weekday:"short", hour:"2-digit", minute:"2-digit"});
 }
 function enterSec(k) {
+  if (SEC !== "home" && SEC !== k) markSeen(SEC);
+  if (k !== "home" && k !== SEC) visitSeen = seenOf(k);
   SEC = k; view = "feed"; tagView = null;
   if (k !== "home") { P = S.secPrefs[k]; DATA = DATAS[k]; }
   document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x.dataset.view === "feed"));
@@ -454,7 +461,17 @@ function mark(html, it) {
   const src = [...new Set(hits.flatMap(a => alertRx(a).src))];
   return html.replace(new RegExp("(" + src.join("|") + ")", "giu"), "<mark>$1</mark>");
 }
-let ALERTN = 0;
+let ALERTN = 0, NEWN = 0, NEWSTART = 0;
+S.lastSeen = S.lastSeen || {};
+let visitSeen = 0;                                   // when you last left this section, fixed for this visit
+const arrived = it => Date.parse(it.first_seen || it.date) || 0;
+const seenOf = k => S.lastSeen[k] || (Date.now() - 864e5);   // first time: anything from the last 24 h counts as new
+const isNew = it => view === "feed" && SEC !== "home" && arrived(it) > visitSeen;
+function markSeen(k) { if (k && k !== "home") { S.lastSeen[k] = Date.now(); save(); } }
+function ago(ms) {
+  const m = Math.round((Date.now() - ms) / 60000);
+  return m < 60 ? `${Math.max(1, m)} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+}
 function allItems() {
   if (view === "feed" && !wantArchive()) return DATA.items;
   if (view === "feed") {
@@ -551,7 +568,7 @@ function card(it) {
   el.style.setProperty("--jc", j.color);
   el.dataset.id = it.id;
   el.innerHTML = `<div class="body">
-    <div class="meta">${hits.map(a => `<span class="tag al">🔔 ${esc(a)}</span>`).join("")}<span class="tag j">${esc(j.short)}</span>${it.type && !["Article", "Post", "Other"].includes(it.type) ? `<span class="tag">${esc(it.type)}</span>` : ""}
+    <div class="meta">${isNew(it) ? '<span class="tag nw">New</span>' : ""}${hits.map(a => `<span class="tag al">🔔 ${esc(a)}</span>`).join("")}<span class="tag j">${esc(j.short)}</span>${it.type && !["Article", "Post", "Other"].includes(it.type) ? `<span class="tag">${esc(it.type)}</span>` : ""}
       ${it.oa ? '<span class="tag oa">Open access</span>' : ""}${it.score < th.relevant ? '<span class="tag bd">Borderline</span>' : ""}
       ${isRead ? '<span class="tag rd">Read</span>' : ""}<span class="date" title="First published online">${(SECS[secOf(it)] || SECS.lit).date}${onlineDate(it.date)}</span></div>
     <div class="title">${mark(esc(it.title), it)}</div>
@@ -589,9 +606,11 @@ function renderHome() {
   $("#list").innerHTML = '<div class="home">' + Object.entries(SECS).map(([k, c]) => {
     const d = DATAS[k] || {items: []}, pk = S.secPrefs[k] || DEF(), th = d.thresholds || {relevant: 0};
     const pool = d.items.filter(i => !S.hidden[i.id] && (k !== "lit" || (i.score >= th.relevant && pk.journals?.[i.journal])));
-    const unread = pool.filter(i => !S.read[i.id]).length, al = alertPinned(d.items).length;
-    return `<button class="tile" data-sec="${k}"><span class="ic">${c.icon}</span><span class="tt"><b>${c.title}</b><small>${c.sub}</small></span>
-      <span class="ct"><span>${unread.toLocaleString("en-GB")}</span><em>unread</em>${al ? `<i>🔔 ${al}</i>` : ""}</span></button>`;
+    const since = seenOf(k), nnew = pool.filter(i => arrived(i) > since).length, al = alertPinned(d.items).length;
+    const latest = Math.max(0, ...pool.map(arrived));
+    return `<button class="tile" data-sec="${k}"><span class="ic">${c.icon}</span><span class="tt"><b>${c.title}</b><small>${c.sub}</small>
+      ${latest ? `<small style="margin-top:4px">Latest ${ago(latest)}</small>` : ""}</span>
+      <span class="ct">${nnew ? `<span>${nnew.toLocaleString("en-GB")}</span><em>new</em>` : `<em style="font-size:13px">Up to date</em>`}${al ? `<i>🔔 ${al}</i>` : ""}</span></button>`;
   }).join("") + "</div>";
 }
 function renderCalendar() {
@@ -633,15 +652,24 @@ function render() {
     const pins = alertPinned();
     if (pins.length) { const ids = new Set(pins.map(i => i.id)); filtered = [...pins, ...filtered.filter(i => !ids.has(i.id))]; ALERTN = pins.length; }
   }
+  NEWN = 0; NEWSTART = ALERTN;
+  if (view === "feed" && SEC !== "home") {
+    const rest = filtered.slice(ALERTN);
+    const fresh = rest.filter(isNew), older = rest.filter(i => !isNew(i));
+    if (!P.q.trim() && P.sort === "new") filtered = [...filtered.slice(0, ALERTN), ...fresh, ...older];
+    NEWN = fresh.length;
+  }
   shown = 0;
   list.innerHTML = "";
   if (view === "tags") list.insertAdjacentHTML("beforeend", `<button class="back" data-back>‹ All groups</button><h2 style="font-family:var(--serif);margin:0 4px 10px">${esc(tagView)}</h2>`);
   if (view === "feed" && !P.q.trim()) for (const l of DATA.links || []) list.insertAdjacentHTML("beforeend", `<a class="linkcard" href="${esc(l.url)}" target="_blank" rel="noopener">in&nbsp; ${esc(l.label)}<span>LinkedIn only, opens there</span>↗</a>`);
   $("#markAll").classList.toggle("hidden", view !== "feed" || !filtered.some(i => !S.read[i.id]));
-  const unread = filtered.filter(i => !S.read[i.id]).length;
+  const keep = SEC === "lit" && !wantArchive() ? ` in the last ${DATA.keep_days || 45} days` : "";
   const noun = view === "feed" ? SECS[SEC].noun : "item";
   const plural = n => n === 1 ? noun : noun === "story" ? "stories" : noun + "s";
-  $("#count").textContent = `${filtered.length.toLocaleString("en-GB")} ${plural(filtered.length)}` + (view === "feed" ? ` · ${unread.toLocaleString("en-GB")} unread` : "") + (wantArchive() ? " · incl. archive" : "");
+  $("#count").textContent = view === "feed"
+    ? `${NEWN ? NEWN.toLocaleString("en-GB") + " new · " : ""}${filtered.length.toLocaleString("en-GB")} ${plural(filtered.length)}${keep}` + (wantArchive() ? " · incl. archive" : "")
+    : `${filtered.length.toLocaleString("en-GB")} ${plural(filtered.length)}`;
   if (!filtered.length) {
     const msg = {feed: DATA.items.length ? ["Nothing matches", "Try widening the filters, or switch relevance to “+ Borderline”."] : ["No papers yet", "The first update runs shortly. Check back soon."],
       starred: ["No starred papers", "Tap the star on any paper to keep it here permanently."],
@@ -657,8 +685,11 @@ function more() {
   const frag = document.createDocumentFragment();
   filtered.slice(shown, shown + PAGE).forEach((it, k) => {
     const i = shown + k;
-    if (ALERTN && i === 0) frag.appendChild(Object.assign(document.createElement("div"), {className: "sechead", innerHTML: `<b>●</b> Alerts · ${ALERTN} new`}));
-    if (ALERTN && i === ALERTN) frag.appendChild(Object.assign(document.createElement("div"), {className: "sechead", textContent: "Everything else"}));
+    const head = (cls, html) => frag.appendChild(Object.assign(document.createElement("div"), {className: cls, innerHTML: html}));
+    const sorted = !P.q.trim() && P.sort === "new" && view === "feed";
+    if (ALERTN && i === 0) head("sechead", `<b>●</b> Alerts · ${ALERTN} unread`);
+    if (sorted && NEWN && i === NEWSTART) head("sechead", `<b style="color:var(--teal)">●</b> New since ${new Date(visitSeen).toLocaleString("en-GB", {weekday: "short", hour: "2-digit", minute: "2-digit"})} · ${NEWN}`);
+    if (sorted && i === NEWSTART + NEWN && (NEWN || ALERTN)) head("caught", `<span>✓ You're caught up</span><small>Earlier ${SECS[SEC].noun === "story" ? "stories" : SECS[SEC].noun + "s"}</small>`);
     frag.appendChild(card(it));
   });
   shown += PAGE;
@@ -949,6 +980,7 @@ $("#importFile").onchange = async e => {
 
 /* auto-refresh when reopened after a while (e.g. on the morning commute) */
 let lastLoad = Date.now();
+document.addEventListener("visibilitychange", () => { if (document.hidden && SEC !== "home") markSeen(SEC); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoad > 30 * 60e3) { lastLoad = Date.now(); load(true); } });
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
