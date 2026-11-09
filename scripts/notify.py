@@ -5,7 +5,7 @@ Needs two GitHub Actions secrets:
   NTFY_TOPIC      your private ntfy topic name
   ALERT_KEYWORDS  keywords, one per line or comma-separated. Whole words; several words form a phrase
                   (pan RAS = pan-RAS); degrad* for any ending; KRAS + degrader for words anywhere; -word excludes.
-Matches title + abstract of papers kept by the feed (any journal). Each paper is notified only once.
+Matches title + abstract of papers kept by any section. Each paper is notified only once.
 """
 import hashlib
 import json
