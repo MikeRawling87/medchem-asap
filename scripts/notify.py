@@ -80,7 +80,7 @@ def main():
         print("Notifications not configured (NTFY_TOPIC / ALERT_KEYWORDS secrets); skipping")
         return
     data = {"items": [], "journals": []}
-    for f in ("data.json", "news.json", "clinical.json", "blogs.json"):
+    for f in ("data.json", "news.json", "clinical.json", "blogs.json", "ai.json"):
         p = os.path.join(ROOT, "docs", f)
         if os.path.exists(p):
             d = json.load(open(p))

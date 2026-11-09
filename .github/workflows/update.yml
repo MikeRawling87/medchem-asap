@@ -45,14 +45,17 @@ jobs:
       - name: Fetch, enrich and score papers
         run: python scripts/fetch.py
 
+      - name: News, clinical & regulatory, blogs
+        run: python scripts/sections.py || echo "sections step failed"
+
+      - name: AI in drug discovery
+        run: python scripts/ai.py || echo "AI step failed"
+
       - name: Keyword alert notifications
         env:
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           ALERT_KEYWORDS: ${{ secrets.ALERT_KEYWORDS }}
         run: python scripts/notify.py
-
-      - name: News, clinical & regulatory, blogs
-        run: python scripts/sections.py || echo "sections step failed"
 
       - name: Save ChemRxiv thumbnails
         if: always()
@@ -65,7 +68,7 @@ jobs:
         run: |
           git config user.name "medchem-asap bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state docs/data.json docs/archive docs/news.json docs/clinical.json docs/blogs.json docs/calendar.json
+          git add state docs/data.json docs/archive docs/news.json docs/clinical.json docs/blogs.json docs/ai.json docs/calendar.json
           git diff --cached --quiet || git commit -m "Update feed $(date -u +%Y-%m-%dT%H:%MZ)"
           git push || (git pull --rebase -X theirs && git push)
 
