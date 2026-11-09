@@ -1,0 +1,77 @@
+name: Update feed
+
+on:
+  schedule:
+    # UTC times. Covers 5 am / 5 pm UK in both GMT and BST, allowing for GitHub's start delays.
+    - cron: "40 3,4,15,16 * * *"
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["docs/**", "scripts/**", ".github/workflows/update.yml"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PDF renderer (ChemRxiv thumbnails)
+        run: pip install --quiet pymupdf
+
+      - name: Restore ChemRxiv thumbnails
+        uses: actions/cache/restore@v4
+        with:
+          path: docs/img
+          key: img-${{ github.run_id }}
+          restore-keys: img-
+
+      - name: Fetch, enrich and score papers
+        run: python scripts/fetch.py
+
+      - name: Keyword alert notifications
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ALERT_KEYWORDS: ${{ secrets.ALERT_KEYWORDS }}
+        run: python scripts/notify.py
+
+      - name: News, clinical & regulatory, blogs
+        run: python scripts/sections.py || echo "sections step failed"
+
+      - name: Save ChemRxiv thumbnails
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: docs/img
+          key: img-${{ github.run_id }}
+
+      - name: Commit updated data
+        run: |
+          git config user.name "medchem-asap bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state docs/data.json docs/archive docs/news.json docs/clinical.json docs/blogs.json docs/calendar.json
+          git diff --cached --quiet || git commit -m "Update feed $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push || (git pull --rebase -X theirs && git push)
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4

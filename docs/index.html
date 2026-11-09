@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f3d3e">
+<title>MedChem ASAP</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#f4f1ea; --card:#fffdf8; --ink:#1d2321; --muted:#66706c; --line:#e3ddd0;
+  --teal:#0f3d3e; --teal2:#1d5c5d; --amber:#e89a3c; --amber-soft:#fbeedc; --green:#2f7d4f; --green-soft:#e4f2e8;
+  --chip:#efebe2; --danger:#a33a2b; --r:16px; --shadow:0 1px 2px rgba(20,30,25,.06),0 4px 14px rgba(20,30,25,.05);
+  --serif:"Iowan Old Style","Source Serif Pro","Noto Serif",Georgia,"Times New Roman",serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121615; --card:#1b201f; --ink:#e9e6df; --muted:#9aa39f; --line:#2b3230; --teal:#8fd0c8; --teal2:#6fb8af;
+  --amber:#f0aa55; --amber-soft:#3a2d1c; --green:#7cc79a; --green-soft:#1d3226; --chip:#262c2a; --danger:#e07a68;
+  --shadow:none}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+/* header */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:calc(env(safe-area-inset-top) + 10px) 14px 8px;border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.brand img{width:34px;height:34px;border-radius:9px}
+.brand h1{font-family:var(--serif);font-size:20px;margin:0;letter-spacing:-.01em;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand>div{min-width:0}
+@media (max-width:400px){.brand img{display:none}}
+.brand small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{height:40px;min-width:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px}
+.iconbtn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+@media (prefers-color-scheme:dark){.iconbtn.primary{color:#0b1514}}
+.iconbtn svg{width:20px;height:20px}
+.badge{background:rgba(255,255,255,.22);border-radius:99px;padding:1px 7px;font-size:13px;font-weight:600}
+.search{margin-top:10px;position:relative}
+.search input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 38px 0 38px;font-size:15.5px}
+.search svg{position:absolute;left:11px;top:11px;width:20px;height:20px;color:var(--muted)}
+.search .clear{position:absolute;right:6px;top:6px;width:30px;height:30px;border:0;background:none;color:var(--muted);font-size:20px}
+.range{display:flex;background:var(--chip);border-radius:12px;padding:3px;gap:3px;margin-top:10px}
+.range button{flex:1;border:0;background:none;height:34px;border-radius:9px;font-size:13.5px;font-weight:650;color:var(--muted)}
+.range button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.strip{display:flex;gap:7px;overflow-x:auto;margin:10px -14px 0;padding:0 14px 2px;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.jchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-size:13.5px;font-weight:600;white-space:nowrap}
+.jchip i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.jchip b{font-weight:500;color:var(--muted)}
+.jchip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.jchip.on b{color:rgba(255,255,255,.8)}
+@media (prefers-color-scheme:dark){.jchip.on{color:#0b1514}.jchip.on b{color:#0b1514}}
+.activef{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.activef span{font-size:12.5px;background:var(--amber-soft);color:var(--ink);border-radius:99px;padding:4px 9px}
+.activef button{font-size:12.5px;border:0;background:none;color:var(--teal2);text-decoration:underline;padding:4px}
+
+/* list */
+main{padding:12px 12px calc(env(safe-area-inset-bottom) + 86px);max-width:760px;margin:0 auto}
+.count{color:var(--muted);font-size:13px;margin:2px 4px 10px;display:flex;justify-content:space-between;gap:8px}
+.count button{border:0;background:none;color:var(--teal2);font-size:13px;padding:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;position:relative;transition:opacity .2s}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--jc,#888)}
+.card.read{opacity:.58}
+.card.read .title{font-weight:500}
+.card .body{padding:13px 14px 4px 18px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
+.tag{border-radius:8px;padding:3px 8px;background:var(--chip);font-weight:600;color:var(--muted)}
+.tag.j{background:var(--jc);color:#fff}
+.tag.oa{background:var(--green-soft);color:var(--green)}
+.tag.tp{background:var(--amber-soft);color:var(--ink);font-weight:500}
+.tag.bd{background:transparent;border:1px dashed var(--line)}
+.tag.rd{background:transparent;border:1px solid var(--line)}
+.tag.ut{background:var(--teal);color:#fff;font-weight:500}
+@media (prefers-color-scheme:dark){.tag.ut{color:#0b1514}}
+.date{color:var(--muted);font-size:12.5px;margin-left:auto;white-space:nowrap}
+.title{font-family:var(--serif);font-size:19px;line-height:1.28;font-weight:650;margin:9px 0 5px;letter-spacing:-.005em}
+.authors{color:var(--muted);font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.authors.open{-webkit-line-clamp:unset}
+.toc{display:block;width:100%;margin:11px 0 3px;border-radius:10px;background:#fff;border:1px solid var(--line);max-height:250px;object-fit:contain}
+.abs{font-size:15px;line-height:1.5;margin:9px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.abs.open{-webkit-line-clamp:unset}
+.abs.none{color:var(--muted);font-style:italic;font-size:14px}
+.acts{display:flex;gap:2px;align-items:center;padding:6px 8px 8px 12px;flex-wrap:nowrap}
+.act{border:0;background:none;height:40px;min-width:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;color:var(--muted);font-size:13.5px;font-weight:600;padding:0 8px}
+.act svg{width:21px;height:21px}
+.act:active{background:var(--chip)}
+.act.ft{background:var(--teal);color:#fff;padding:0 13px;margin-right:auto;text-decoration:none}
+@media (prefers-color-scheme:dark){.act.ft{color:#0b1514}}
+.act.on{color:var(--amber)}
+.act.on.rd{color:var(--green)}
+.act.ab{color:var(--ink);border:1px solid var(--line);margin-left:6px;margin-right:auto}
+.card.alert{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-soft),var(--shadow)}
+.card.alert::before{background:var(--amber)}
+.tag.al{background:var(--amber);color:#fff}
+mark{background:var(--amber-soft);color:inherit;border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--amber)}
+.sechead{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 4px 10px}
+.sechead b{color:var(--amber)}
+.abadge{background:var(--amber);color:#fff;border-radius:99px;padding:0 6px;font-size:12px;font-weight:700;margin-left:-2px}
+.alist .row b{cursor:pointer}
+.home{display:grid;gap:12px;margin-top:4px}
+.tile{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px;box-shadow:var(--shadow);width:100%}
+.tile .ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;background:var(--chip)}
+.tile .tt{flex:1;min-width:0}
+.tile b{display:block;font-family:var(--serif);font-size:20px;margin-bottom:3px}
+.tile small{display:block;color:var(--muted);font-size:13.5px;line-height:1.35}
+.tile .ct{text-align:right;flex:none}
+.tile .ct span{display:block;font-weight:700;font-size:18px;color:var(--teal)}
+.tile .ct em{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+.tile .ct i{display:inline-block;margin-top:4px;background:var(--amber);color:#fff;border-radius:99px;padding:1px 8px;font-size:12px;font-style:normal;font-weight:700}
+.linkcard{display:flex;align-items:center;gap:10px;background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px;color:var(--ink);text-decoration:none;font-weight:600}
+.linkcard span{color:var(--muted);font-weight:400;font-size:13px;flex:1}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:10px;padding:13px 14px;display:flex;gap:12px}
+.cal .when{flex:none;width:58px;text-align:center;border-radius:12px;background:var(--chip);padding:7px 0}
+.cal .when b{display:block;font-size:20px;font-family:var(--serif)}
+.cal .when small{font-size:11.5px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.cal .what{flex:1;min-width:0}
+.cal .what h3{margin:2px 0 4px;font-family:var(--serif);font-size:17px;line-height:1.25}
+.cal .what p{margin:3px 0;font-size:14px;line-height:1.4;color:var(--ink)}
+.cal .what p.m{color:var(--muted);font-size:13px}
+.cal a{color:var(--teal2);font-size:13px;font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;line-height:1.5}
+.empty b{display:block;font-family:var(--serif);font-size:20px;color:var(--ink);margin-bottom:6px}
+#sentinel{height:40px}
+
+/* bottom nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:color-mix(in srgb,var(--card) 94%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;border:0;background:none;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted)}
+nav.tabs svg{width:23px;height:23px}
+nav.tabs button.on{color:var(--teal)}
+nav.tabs .n{font-size:10.5px;font-weight:500}
+
+/* sheets */
+.scrim{position:fixed;inset:0;background:rgba(10,15,14,.42);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--card);border-radius:20px 20px 0 0;max-height:88vh;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .25s ease;max-width:760px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+.sheet.show{transform:none}
+.sheet .grab{width:38px;height:5px;border-radius:9px;background:var(--line);margin:9px auto 0}
+.sheet .sh{display:flex;align-items:center;padding:10px 16px 8px}
+.sheet .sh h2{font-family:var(--serif);font-size:22px;margin:0;flex:1}
+.sheet .sc{overflow-y:auto;padding:0 16px 14px}
+.sheet .sf{display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line)}
+.sheet .sf button{flex:1;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:650}
+.sheet .sf .go{background:var(--teal);border-color:var(--teal);color:#fff}
+@media (prefers-color-scheme:dark){.sheet .sf .go{color:#0b1514}}
+.sec{margin:14px 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;height:38px;border-radius:9px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips button{border:1px solid var(--line);background:var(--card);border-radius:99px;height:34px;padding:0 12px;font-size:13.5px}
+.chips button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+@media (prefers-color-scheme:dark){.chips button.on{color:#0b1514}}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .jl{width:10px;height:28px;border-radius:4px;flex:none}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font-weight:600;font-size:14.5px}
+.row .tx small{color:var(--muted);font-size:12.5px}
+.sw{position:relative;width:46px;height:28px;flex:none}
+.sw input{opacity:0;width:0;height:0;position:absolute}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:99px;transition:.15s}
+.sw span::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.sw input:checked+span{background:var(--teal)}
+.sw input:checked+span::after{transform:translateX(18px)}
+.mini{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.mini button{border:1px solid var(--line);background:var(--card);border-radius:9px;height:32px;padding:0 10px;font-size:13px;font-weight:600}
+.dates{display:flex;gap:10px;margin-top:8px}
+.dates label{flex:1;font-size:12.5px;color:var(--muted)}
+.dates input,select.full,.tagin input{width:100%;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 10px;margin-top:4px}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:6px}
+.tagin{display:flex;gap:8px}
+.tagin input{margin:0}
+.tagin button{height:42px;border-radius:10px;border:0;background:var(--teal);color:#fff;padding:0 14px;font-weight:650}
+.tlist .row button.del{border:0;background:none;color:var(--muted);font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 76px);transform:translateX(-50%) translateY(20px);background:#1d2321;color:#fff;border-radius:12px;padding:11px 14px;display:flex;gap:14px;align-items:center;z-index:60;opacity:0;pointer-events:none;transition:.2s;font-size:14px;max-width:92vw;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast button{border:0;background:none;color:var(--amber);font-weight:700}
+.tagcard{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;width:100%;text-align:left}
+.tagcard b{flex:1;font-size:16px}
+.tagcard span{color:var(--muted);font-size:14px}
+.back{border:0;background:none;color:var(--teal2);font-weight:650;padding:4px 0 10px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <button class="iconbtn hidden" id="btnBack" aria-label="Back to home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="brand"><img src="icons/icon-192.png" alt="" id="brandImg"><div><h1 id="secTitle">MedChem ASAP</h1><small id="updated">Loading…</small></div></div>
+    <button class="iconbtn" id="btnAlerts" aria-label="Keyword alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="abadge hidden" id="acount"></span></button>
+    <button class="iconbtn" id="btnRefresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
+    <button class="iconbtn primary" id="btnFilters" aria-label="Filters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="fcount">0</span></button>
+  </div>
+  <div class="search" id="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Search titles, authors, abstracts, tags…" autocomplete="off" enterkeyhint="search">
+    <button class="clear hidden" id="qclear" aria-label="Clear search">×</button></div>
+  <div class="range" id="range"><button data-d="0">Latest</button><button data-d="7">7 days</button><button data-d="90">3 months</button><button data-d="365">12 months</button></div>
+  <div class="strip" id="strip"></div>
+  <div class="activef" id="activef"></div>
+</header>
+
+<main>
+  <div class="count"><span id="count"></span><button id="markAll">Mark all shown as read</button></div>
+  <div id="list"></div>
+  <div id="sentinel"></div>
+</main>
+
+<nav class="tabs">
+  <button data-view="feed" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home<span class="n" id="nFeed"></span></button>
+  <button data-view="starred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>Starred<span class="n" id="nStar"></span></button>
+  <button data-view="tags"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1.3" fill="currentColor"/></svg>Groups<span class="n" id="nTags"></span></button>
+  <button data-view="hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3l18 18M10.6 6.1A9.7 9.7 0 0 1 12 6c5 0 9 6 9 6a17 17 0 0 1-2.6 3.2M6.2 7.6C4.2 9.2 3 12 3 12s4 6 9 6a8.6 8.6 0 0 0 3.7-.8"/></svg>Hidden<span class="n" id="nHid"></span></button>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- Filters sheet -->
+<section class="sheet" id="shFilters" aria-label="Filters">
+  <div class="grab"></div>
+  <div class="sh"><h2>Filters &amp; sort</h2><button class="iconbtn" data-close aria-label="Close">✕</button></div>
+  <div class="sc">
+    <div id="relBlock"><div class="sec">Relevance</div>
+    <div class="seg" id="fRel">
+      <button data-v="relevant">Med chem</button><button data-v="borderline">+ Borderline</button>
+    </div>
+    <div class="hint">“Med chem” shows everything from core med chem journals plus papers from broad journals that score as drug discovery. “+ Borderline” adds weaker matches.</div></div>
+
+    <div class="sec">Sort</div>
+    <select class="full" id="fSort">
+      <option value="new">Newest first</option><option value="old">Oldest first</option>
+      <option value="rel">Most med chem relevant</option><option value="jour">Journal A–Z</option>
+    </select>
+
+    <div id="dateBlock"><div class="sec">Date</div>
+    <div class="chips" id="fDateQuick">
+      <button data-d="0">Latest</button><button data-d="1">24 h</button><button data-d="3">3 days</button><button data-d="7">7 days</button><button data-d="30">30 days</button><button data-d="90">3 months</button><button data-d="365">12 months</button>
+    </div>
+    <div class="hint">“Latest” is the live feed (last 45 days). 3 or 12 months, or a custom range, also loads the archive so you can browse and search older papers.</div></div>
+    <div class="dates"><label>From<input type="date" id="fFrom"></label><label>To<input type="date" id="fTo"></label></div>
+
+    <div class="sec" id="secType">Article type</div>
+    <div class="chips" id="fTypes"></div>
+
+    <div class="sec" id="secTopic">Topic</div>
+    <div class="chips" id="fTopics"></div>
+    <div class="hint">Topics are tagged automatically from titles and abstracts. Picking several shows papers matching any of them.</div>
+
+    <div class="sec">Other</div>
+    <div class="row"><div class="tx"><b>Show read papers</b><small>Read papers stay in the feed, faded</small></div><label class="sw"><input type="checkbox" id="fShowRead"><span></span></label></div>
+    <div class="row" id="rowOA"><div class="tx"><b>Open access only</b></div><label class="sw"><input type="checkbox" id="fOA"><span></span></label></div>
+    <div class="row"><div class="tx"><b>Only papers with a graphic</b></div><label class="sw"><input type="checkbox" id="fImg"><span></span></label></div>
+    <div class="row"><div class="tx"><b>Compact cards</b><small>Hide graphics and abstracts until tapped</small></div><label class="sw"><input type="checkbox" id="fCompact"><span></span></label></div>
+
+    <div class="sec" id="secJour">Journals</div>
+    <div class="mini" id="fJSel"><button data-js="all">All</button><button data-js="def" class="litonly">ChemASAP defaults</button><button data-js="core" class="litonly">Med chem journals</button><button data-js="none">None</button></div>
+    <div id="fJournals"></div>
+
+    <div class="sec">Backup</div>
+    <div class="hint">Stars, groups, read and hidden marks are saved on this phone only. Export a backup now and then, or to move to a new phone.</div>
+    <div class="mini" style="margin-top:8px"><button id="btnExport">Export backup</button><button id="btnImport">Import backup</button><input type="file" id="importFile" accept="application/json,.json" class="hidden"></div>
+  </div>
+  <div class="sf"><button id="fReset">Reset</button><button class="go" data-close>Show results</button></div>
+</section>
+
+<!-- Alerts sheet -->
+<section class="sheet" id="shAlerts" aria-label="Keyword alerts">
+  <div class="grab"></div>
+  <div class="sh"><h2>Keyword alerts</h2><button class="iconbtn" data-close aria-label="Close">✕</button></div>
+  <div class="sc">
+    <div class="tagin"><input id="alertNew" placeholder="e.g. KRAS, pan RAS, degrad*" enterkeyhint="done" autocapitalize="off"><button id="alertAdd">Add</button></div>
+    <div class="hint">New unread papers whose title or abstract matches an alert are pinned to the top of your feed and highlighted, from any journal, even ones you've switched off. </div>
+    <div class="hint"><b>How matching works:</b> whole words only, so <i>RAS</i> won't match “parasites”. Several words are a phrase, and spaces and hyphens are interchangeable: <i>pan RAS</i> matches “pan-RAS”. Add <b>*</b> for any ending (<i>degrad*</i>), <b>+</b> to require words anywhere (<i>KRAS + degrader</i>) and <b>-</b> to exclude (<i>KRAS -review</i>).</div>
+    <div class="sec">Your alerts</div>
+    <div class="alist" id="alertList"></div>
+  </div>
+  <div class="sf"><button class="go" data-close>Done</button></div>
+</section>
+
+<!-- Tag sheet -->
+<section class="sheet" id="shTag" aria-label="Groups">
+  <div class="grab"></div>
+  <div class="sh"><h2>Add to group</h2><button class="iconbtn" data-close aria-label="Close">✕</button></div>
+  <div class="sc">
+    <div class="hint" id="tagFor" style="margin:0 0 10px"></div>
+    <div class="tagin"><input id="tagNew" placeholder="New group, e.g. KRAS, degraders, to cite" enterkeyhint="done"><button id="tagAdd">Add</button></div>
+    <div class="sec">Your groups</div>
+    <div class="chips" id="tagChips"></div>
+    <div class="hint">Grouped papers are kept permanently, even after they leave the feed.</div>
+  </div>
+  <div class="sf"><button class="go" data-close>Done</button></div>
+</section>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo">Undo</button></div>
+
+<script>
+"use strict";
+/* ------------------------------------------------------------------ storage */
+const KEY = "mca.v1";
+const blank = () => ({read:{}, hidden:{}, starred:{}, tags:{}, saved:{}, prefs:{}, alerts:[]});
+let S;
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) { S = blank(); }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast("Couldn't save on this device"); } };
+const DEF = () => ({rel:"relevant", sort:"new", days:0, from:"", to:"", types:[], topics:[], showRead:true,
+  oa:false, img:false, compact:false, journals:null, q:""});
+S.secPrefs = S.secPrefs || {lit: Object.assign(DEF(), S.prefs || {})};
+let SEC = "home";
+let P = S.secPrefs.lit = Object.assign(DEF(), S.secPrefs.lit);
+const saveP = () => { S.secPrefs[SEC === "home" ? "lit" : SEC] = P; save(); };
+const SECS = {
+  lit:   {file: "data.json", title: "Literature", icon: "🧪", sub: "Med chem & drug discovery papers from ASAP and early-view feeds",
+          src: "Journals", type: "Article type", topic: "Topic", noun: "paper", date: "Online ",
+          range: [[0, "Latest"], [7, "7 days"], [90, "3 months"], [365, "12 months"]]},
+  news:  {file: "news.json", title: "Industry news", icon: "📰", sub: "Deals, partnerships, funding, layoffs, strategy and R&D",
+          src: "Sources", type: "Category", topic: "Tags", noun: "story", date: "",
+          range: [[0, "All"], [1, "24 h"], [7, "7 days"], [30, "30 days"]]},
+  clin:  {file: "clinical.json", title: "Clinical & regulatory", icon: "🩺", sub: "Readouts, trial starts and stops, FDA/EMA decisions and what's coming up",
+          src: "Sources", type: "Category", topic: "Tags", noun: "update", date: "",
+          range: [[0, "All"], [1, "24 h"], [7, "7 days"], [-1, "Upcoming"]]},
+  blogs: {file: "blogs.json", title: "Blogs & opinion", icon: "✍️", sub: "Lowe, Walters, Drug Hunter, Practical Fragments and more",
+          src: "Blogs", type: "Type", topic: "Tags", noun: "post", date: "Posted ",
+          range: [[0, "All"], [7, "7 days"], [30, "30 days"], [365, "12 months"]]},
+};
+const DATAS = {}; let CAL = {items: []};
+
+/* ------------------------------------------------------------------ data */
+let DATA = {items:[], journals:[], topics:[], thresholds:{relevant:4, borderline:2}};
+const ARCH = {index:{}, months:{}, loading:false};
+let J = {};          // journal id -> meta
+let view = "feed", tagView = null;
+let filtered = [], shown = 0;
+const PAGE = 40;
+
+const $ = s => document.querySelector(s);
+const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function load(force) {
+  $("#updated").textContent = "Updating…";
+  const q = force ? "?t=" + Date.now() : "";
+  await Promise.all(Object.entries(SECS).map(async ([k, c]) => {
+    try { const r = await fetch(c.file + q, {cache: force ? "reload" : "default"}); if (r.ok) DATAS[k] = await r.json(); } catch (e) {}
+    DATAS[k] = DATAS[k] || {items: [], journals: [], topics: [], thresholds: {relevant: 0, borderline: 0}};
+  }));
+  try { const r = await fetch("calendar.json" + q); if (r.ok) CAL = await r.json(); } catch (e) {}
+  J = {};
+  for (const [k, d] of Object.entries(DATAS)) {
+    for (const j of d.journals) J[j.id] = j;
+    const pk = S.secPrefs[k] = Object.assign(DEF(), S.secPrefs[k] || {});
+    if (!pk.journals) pk.journals = Object.fromEntries(d.journals.map(j => [j.id, k === "lit" ? !!j.on : true]));
+    for (const j of d.journals) if (!(j.id in pk.journals)) pk.journals[j.id] = k === "lit" ? !!j.on : true;
+    for (const it of d.items) if (S.saved[it.id]) S.saved[it.id] = it;   // refresh saved copies
+  }
+  P = S.secPrefs[SEC === "home" ? "lit" : SEC];
+  DATA = DATAS[SEC === "home" ? "lit" : SEC];
+  save();
+  showUpdated();
+  try { const r = await fetch("archive/index.json" + (force ? "?t=" + Date.now() : "")); if (r.ok) ARCH.index = (await r.json()).months || {}; } catch (e) {}
+  buildFilterUI();
+  render();
+}
+function showUpdated() {
+  const g = new Date((SEC === "home" ? DATAS.lit : DATA)?.generated || Date.now());
+  $("#updated").textContent = "Updated " + g.toLocaleString("en-GB", {weekday:"short", hour:"2-digit", minute:"2-digit"});
+}
+function enterSec(k) {
+  SEC = k; view = "feed"; tagView = null;
+  if (k !== "home") { P = S.secPrefs[k]; DATA = DATAS[k]; }
+  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x.dataset.view === "feed"));
+  $("#q").value = P.q || ""; $("#qclear").classList.toggle("hidden", !P.q);
+  buildFilterUI(); render(); scrollTo(0, 0);
+}
+function setChrome() {
+  const home = SEC === "home" && view === "feed";
+  const inSec = SEC !== "home";
+  $("#btnBack").classList.toggle("hidden", !inSec);
+  $("#brandImg").classList.toggle("hidden", inSec);
+  $("#secTitle").textContent = view !== "feed" ? {starred: "Starred", tags: "Groups", hidden: "Hidden"}[view] : inSec ? SECS[SEC].title : "MedChem ASAP";
+  $("#btnFilters").classList.toggle("hidden", home || view !== "feed");
+  $("#searchBox").classList.toggle("hidden", home);
+  document.querySelector("main .count").classList.toggle("hidden", home);
+  showUpdated();
+}
+function wantArchive() { return SEC === "lit" && view === "feed" && (P.days > 45 || !!P.from || !!P.to); }
+function monthsNeeded() {
+  const all = Object.keys(ARCH.index).sort();
+  const from = P.from ? P.from.slice(0, 7) : new Date(Date.now() - P.days * 864e5).toISOString().slice(0, 7);
+  const to = P.to ? P.to.slice(0, 7) : "9999-99";
+  return all.filter(m => m >= from && m <= to);
+}
+async function ensureArchive() {
+  if (!wantArchive()) return false;
+  const need = monthsNeeded().filter(m => !ARCH.months[m]);
+  if (!need.length) return false;
+  ARCH.loading = true;
+  $("#count").textContent = `Loading archive (${need.length} month${need.length > 1 ? "s" : ""})…`;
+  await Promise.all(need.map(async m => {
+    try { const r = await fetch(`archive/${m}.json`); if (r.ok) ARCH.months[m] = (await r.json()).items; } catch (e) {}
+  }));
+  ARCH.loading = false;
+  return true;
+}
+
+/* ------------------------------------------------------------------ filtering */
+function textOf(it) {
+  return it._t || (it._t = (it.title + " " + (it.authors || []).join(" ") + " " + (it.abstract || "") + " " +
+    (J[it.journal]?.short || "") + " " + (J[it.journal]?.name || "") + " " + (it.topics || []).join(" ") + " " + it.doi).toLowerCase());
+}
+function parseQuery(q) {
+  const terms = []; let m; const rx = /"([^"]+)"|(\S+)/g;
+  while ((m = rx.exec(q.toLowerCase()))) terms.push(m[1] || m[2]);
+  return terms.map(t => t.startsWith("-") && t.length > 1 ? {neg:true, t:t.slice(1)} : {neg:false, t});
+}
+/* Alert grammar: words form a phrase (spaces/hyphens interchangeable, whole words only); "*" = any ending;
+   "+" joins parts that may appear anywhere; a part starting with "-" excludes. */
+const SEP = "[\\s\\-\u2010\u2011\u2012\u2013/]*";
+function phraseRx(ph) {
+  const words = ph.replace(/["“”]/g, "").toLowerCase().split(/[\s\-\u2010\u2011\u2013]+/).filter(Boolean);
+  if (!words.length) return null;
+  const body = words.map(w => w.endsWith("*") ? reEsc(w.slice(0, -1)) + "[\\p{L}\\p{N}]*" : reEsc(w)).join(SEP);
+  return "(?<![\\p{L}\\p{N}])" + body + "(?![\\p{L}\\p{N}])";
+}
+const RXC = {};
+function alertRx(a) {
+  if (RXC[a]) return RXC[a];
+  const pos = [], neg = [];
+  for (const chunk of a.split("+")) {
+    // " -word" inside a part starts an exclusion
+    const bits = (" " + chunk).split(/\s-(?=\S)/);
+    const head = bits.shift().trim();
+    if (head) { const r = phraseRx(head); if (r) pos.push(r); }
+    for (const n of bits) { const r = phraseRx(n.trim()); if (r) neg.push(r); }
+  }
+  return RXC[a] = {pos: pos.map(r => new RegExp(r, "iu")), neg: neg.map(r => new RegExp(r, "iu")), src: pos};
+}
+function alertHits(it) {
+  if (!S.alerts.length) return [];
+  const tx = it._a || (it._a = it.title + " " + (it.abstract || ""));
+  return S.alerts.filter(a => { const r = alertRx(a); return r.pos.length && r.pos.every(x => x.test(tx)) && !r.neg.some(x => x.test(tx)); });
+}
+function alertPinned(items = DATA.items) {
+  return items.filter(it => !S.hidden[it.id] && !S.read[it.id] && alertHits(it).length)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+function mark(html, it) {
+  const hits = alertHits(it); if (!hits.length) return html;
+  const src = [...new Set(hits.flatMap(a => alertRx(a).src))];
+  return html.replace(new RegExp("(" + src.join("|") + ")", "giu"), "<mark>$1</mark>");
+}
+let ALERTN = 0;
+function allItems() {
+  if (view === "feed" && !wantArchive()) return DATA.items;
+  if (view === "feed") {
+    const dois = new Set(DATA.items.map(i => i.doi).filter(Boolean)), ids = new Set(DATA.items.map(i => i.id));
+    const out = [...DATA.items];
+    for (const m of monthsNeeded()) for (const it of ARCH.months[m] || []) if (!ids.has(it.id) && !(it.doi && dois.has(it.doi))) out.push(it);
+    return out;
+  }
+  const map = new Map();
+  for (const d of Object.values(DATAS)) for (const i of d.items) map.set(i.id, i);
+  for (const m of Object.values(ARCH.months)) for (const i of m) if (!map.has(i.id)) map.set(i.id, i);
+  for (const [id, it] of Object.entries(S.saved)) if (!map.has(id)) map.set(id, it);
+  return [...map.values()];
+}
+function apply() {
+  const th = DATA.thresholds || {relevant:4, borderline:2};
+  const min = P.rel === "relevant" ? th.relevant : th.borderline;
+  const terms = parseQuery(P.q.trim());
+  const now = Date.now();
+  const from = P.from ? new Date(P.from + "T00:00:00").getTime() : (P.days ? now - P.days * 864e5 : 0);
+  const to = P.to ? new Date(P.to + "T23:59:59").getTime() : Infinity;
+  let items = allItems().filter(it => {
+    if (view === "feed") {
+      if (S.hidden[it.id]) return false;
+      if (it.score < min) return false;
+      if (!P.journals[it.journal]) return false;
+      if (!P.showRead && S.read[it.id]) return false;
+    } else if (view === "starred") { if (!S.starred[it.id]) return false; }
+    else if (view === "hidden") { if (!S.hidden[it.id]) return false; }
+    else if (view === "tags") { if (!tagView || !(S.tags[it.id] || []).includes(tagView)) return false; }
+    const d = new Date(it.date).getTime();
+    if (view !== "feed") {
+      if (!terms.length) return true;
+      const tx = textOf(it) + " " + (S.tags[it.id] || []).join(" ").toLowerCase();
+      return terms.every(({neg, t}) => tx.includes(t) !== neg);
+    }
+    if (d < from || d > to) return false;
+    if (P.types.length && !P.types.includes(it.type)) return false;
+    if (P.topics.length && !(it.topics || []).some(t => P.topics.includes(t))) return false;
+    if (P.oa && !it.oa) return false;
+    if (P.img && !(it.imgs || []).length) return false;
+    if (terms.length) {
+      const tx = textOf(it) + " " + (S.tags[it.id] || []).join(" ").toLowerCase();
+      for (const {neg, t} of terms) if (tx.includes(t) === neg) return false;
+    }
+    return true;
+  });
+  const by = {
+    new: (a, b) => b.date.localeCompare(a.date),
+    old: (a, b) => a.date.localeCompare(b.date),
+    rel: (a, b) => b.score - a.score || b.date.localeCompare(a.date),
+    jour: (a, b) => (J[a.journal]?.short || "").localeCompare(J[b.journal]?.short || "") || b.date.localeCompare(a.date),
+  }[P.sort] || ((a, b) => b.date.localeCompare(a.date));
+  items.sort(view === "hidden" ? (a, b) => (S.hidden[b.id] || 0) - (S.hidden[a.id] || 0) : by);
+  return items;
+}
+
+/* ------------------------------------------------------------------ rendering */
+function onlineDate(d) {
+  const t = new Date(d), now = new Date();
+  const day = t.toLocaleDateString("en-GB", {day:"numeric", month:"short", year: t.getFullYear() === now.getFullYear() ? undefined : "numeric"});
+  const diff = Math.floor((new Date(now.toDateString()) - new Date(t.toDateString())) / 864e5);
+  return diff === 0 ? "Today" : diff === 1 ? "Yesterday" : day;
+}
+function rel(d) {
+  const s = (Date.now() - new Date(d).getTime()) / 1000;
+  if (s < 3600) return Math.max(1, Math.round(s / 60)) + " min ago";
+  if (s < 86400) return Math.round(s / 3600) + " h ago";
+  if (s < 86400 * 7) return Math.round(s / 86400) + " d ago";
+  return new Date(d).toLocaleDateString("en-GB", {day:"numeric", month:"short"});
+}
+const ICON = {
+  star: '<svg viewBox="0 0 24 24" fill="FILL" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+  tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 12V4h8l9 9-8 8z"/><circle cx="7.5" cy="8.5" r="1.3" fill="currentColor"/></svg>',
+  read: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>',
+  hide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  unhide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12s4-6 9-6 9 6 9 6-4 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:16px;height:16px"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+};
+function secOf(it) {
+  const p = (it.id || "").slice(0, 3);
+  return p.startsWith("n:") ? "news" : p.startsWith("b:") ? "blogs" : (p === "cn:" || p.startsWith("ct:") || p.startsWith("e:") || it.id.startsWith("fda:")) ? "clin" : "lit";
+}
+function card(it) {
+  const j = J[it.journal] || {short: it.journal, color: "#777"};
+  const th = DATA.thresholds || {relevant: 4};
+  const isRead = !!S.read[it.id], isStar = !!S.starred[it.id], tags = S.tags[it.id] || [];
+  const imgs = (it.imgs || []);
+  const compact = P.compact;
+  const el = document.createElement("article");
+  const hits = alertHits(it);
+  el.className = "card" + (isRead ? " read" : "") + (hits.length ? " alert" : "");
+  el.style.setProperty("--jc", j.color);
+  el.dataset.id = it.id;
+  el.innerHTML = `<div class="body">
+    <div class="meta">${hits.map(a => `<span class="tag al">🔔 ${esc(a)}</span>`).join("")}<span class="tag j">${esc(j.short)}</span>${it.type && !["Article", "Post", "Other"].includes(it.type) ? `<span class="tag">${esc(it.type)}</span>` : ""}
+      ${it.oa ? '<span class="tag oa">Open access</span>' : ""}${it.score < th.relevant ? '<span class="tag bd">Borderline</span>' : ""}
+      ${isRead ? '<span class="tag rd">Read</span>' : ""}<span class="date" title="First published online">${(SECS[secOf(it)] || SECS.lit).date}${onlineDate(it.date)}</span></div>
+    <div class="title">${mark(esc(it.title), it)}</div>
+    ${(it.authors || []).length ? `<div class="authors">${esc(it.authors.join(", "))}</div>` : ""}
+    ${imgs.length && !compact ? `<img class="toc" loading="lazy" referrerpolicy="no-referrer" alt="Graphical abstract" src="${esc(imgs[0])}" data-i="0">` : ""}
+    ${it.abstract ? `<div class="abs${compact ? " hidden" : ""}">${mark(esc(it.abstract), it)}</div>` : (secOf(it) === "lit" ? `<div class="abs none${compact ? " hidden" : ""}">Abstract not available yet. Tap Full text to read it on the journal site.</div>` : "")}
+    ${(tags.length || (it.topics || []).some(t => t !== it.type && t !== "Post")) ? `<div class="meta" style="margin-top:9px">${tags.map(t => `<span class="tag ut">${esc(t)}</span>`).join("")}${(it.topics || []).filter(t => t !== it.type && t !== "Post").slice(0, 3).map(t => `<span class="tag tp">${esc(t)}</span>`).join("")}</div>` : ""}
+  </div>
+  <div class="acts">
+    <a class="act ft" href="${esc(it.url)}" target="_blank" rel="noopener" data-a="open">${secOf(it) === "lit" ? "Full text" : "Open"} ${ICON.ext}</a>
+    <button class="act ${isStar ? "on" : ""}" data-a="star" aria-label="Star">${ICON.star.replace("FILL", isStar ? "currentColor" : "none")}</button>
+    <button class="act ${tags.length ? "on" : ""}" data-a="tag" aria-label="Add to group">${ICON.tag}</button>
+    <button class="act rd ${isRead ? "on" : ""}" data-a="read" aria-label="Mark read">${ICON.read}</button>
+    ${view === "hidden" ? `<button class="act" data-a="unhide" aria-label="Unhide">${ICON.unhide}</button>` : `<button class="act" data-a="hide" aria-label="Hide">${ICON.hide}</button>`}
+  </div>`;
+  const img = el.querySelector("img.toc");
+  if (img) img.onerror = () => {          // try the next candidate graphic, then give up quietly
+    const i = +img.dataset.i + 1;
+    if (i < imgs.length) { img.dataset.i = i; img.src = imgs[i]; } else img.remove();
+  };
+  if (compact && imgs.length) el.dataset.lazyimg = "1";
+  return el;
+}
+function renderTagIndex() {
+  const counts = {};
+  for (const ts of Object.values(S.tags)) for (const t of ts) counts[t] = (counts[t] || 0) + 1;
+  const names = Object.keys(counts).sort((a, b) => a.localeCompare(b));
+  $("#count").textContent = names.length ? `${names.length} group${names.length > 1 ? "s" : ""}` : "";
+  $("#markAll").classList.add("hidden");
+  $("#list").innerHTML = names.length ? names.map(t => `<button class="tagcard" data-tag="${esc(t)}"><b>${esc(t)}</b><span>${counts[t]}</span></button>`).join("")
+    : `<div class="empty"><b>No groups yet</b>Tap the tag icon on any paper to file it in a group, e.g. “KRAS”, “degraders” or “to cite”.</div>`;
+}
+function renderHome() {
+  filtered = []; shown = 0;
+  $("#list").innerHTML = '<div class="home">' + Object.entries(SECS).map(([k, c]) => {
+    const d = DATAS[k] || {items: []}, pk = S.secPrefs[k] || DEF(), th = d.thresholds || {relevant: 0};
+    const pool = d.items.filter(i => !S.hidden[i.id] && (k !== "lit" || (i.score >= th.relevant && pk.journals?.[i.journal])));
+    const unread = pool.filter(i => !S.read[i.id]).length, al = alertPinned(d.items).length;
+    return `<button class="tile" data-sec="${k}"><span class="ic">${c.icon}</span><span class="tt"><b>${c.title}</b><small>${c.sub}</small></span>
+      <span class="ct"><span>${unread.toLocaleString("en-GB")}</span><em>unread</em>${al ? `<i>🔔 ${al}</i>` : ""}</span></button>`;
+  }).join("") + "</div>";
+}
+function renderCalendar() {
+  filtered = []; shown = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const terms = parseQuery(P.q.trim());
+  const items = (CAL.items || []).filter(x => (x.date || "") >= today || (x.date_note && (x.date || "").slice(0, 7) >= today.slice(0, 7))).filter(x => {
+    if (!terms.length) return true;
+    const tx = Object.values(x).join(" ").toLowerCase();
+    return terms.every(({neg, t}) => tx.includes(t) !== neg);
+  }).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+  $("#count").textContent = `${items.length} upcoming decision${items.length === 1 ? "" : "s"}` + (CAL.generated ? ` · list updated ${new Date(CAL.generated).toLocaleDateString("en-GB", {day: "numeric", month: "short"})}` : "");
+  $("#markAll").classList.add("hidden");
+  $("#strip").classList.add("hidden");
+  $("#list").innerHTML = items.length ? items.map(x => {
+    const d = new Date(x.date + "T12:00:00");
+    return `<div class="cal"><div class="when"><small>${d.toLocaleDateString("en-GB", {month: "short"})}</small><b>${x.date_note ? "~" : d.getDate()}</b><small>${esc(x.agency || "")}</small></div>
+      <div class="what"><h3>${esc(x.drug || "")}${x.company ? ` <span style="font-family:var(--sans);font-size:13px;color:var(--muted);font-weight:500">· ${esc(x.company)}</span>` : ""}</h3>
+      <p><b>${esc(x.decision || "")}</b></p>
+      <p>${[x.disease && "Disease: " + esc(x.disease), x.target && "Target: " + esc(x.target), x.modality && "Modality: " + esc(x.modality)].filter(Boolean).join(" · ")}</p>
+      ${x.notes ? `<p class="m">${esc(x.notes)}</p>` : ""}
+      ${x.date_note ? `<p class="m">Date: ${esc(x.date_note)}</p>` : ""}
+      ${x.source_url ? `<a href="${esc(x.source_url)}" target="_blank" rel="noopener">Source ↗</a>` : ""}</div></div>`;
+  }).join("") + '<div class="hint" style="text-align:center;margin:14px 0">Compiled weekly from public announcements; dates are companies\' expected decision dates and may change. Not complete.</div>'
+    : '<div class="empty"><b>No upcoming decisions listed yet</b>The list is refreshed weekly.</div>';
+}
+function render() {
+  setChrome();
+  if (SEC === "home" && view === "feed") { updateCounts(); renderActiveFilters(); renderHome(); return; }
+  if (SEC === "clin" && view === "feed" && P.days === -1) { updateCounts(); renderActiveFilters(); renderCalendar(); return; }
+  if (wantArchive() && monthsNeeded().some(m => !ARCH.months[m]) && !ARCH.loading) { ensureArchive().then(render); return; }
+  updateCounts();
+  renderActiveFilters();
+  const list = $("#list");
+  if (view === "tags" && !tagView) { renderTagIndex(); return; }
+  filtered = apply();
+  ALERTN = 0;
+  if (view === "feed" && !P.q.trim()) {
+    const pins = alertPinned();
+    if (pins.length) { const ids = new Set(pins.map(i => i.id)); filtered = [...pins, ...filtered.filter(i => !ids.has(i.id))]; ALERTN = pins.length; }
+  }
+  shown = 0;
+  list.innerHTML = "";
+  if (view === "tags") list.insertAdjacentHTML("beforeend", `<button class="back" data-back>‹ All groups</button><h2 style="font-family:var(--serif);margin:0 4px 10px">${esc(tagView)}</h2>`);
+  if (view === "feed" && !P.q.trim()) for (const l of DATA.links || []) list.insertAdjacentHTML("beforeend", `<a class="linkcard" href="${esc(l.url)}" target="_blank" rel="noopener">in&nbsp; ${esc(l.label)}<span>LinkedIn only, opens there</span>↗</a>`);
+  $("#markAll").classList.toggle("hidden", view !== "feed" || !filtered.some(i => !S.read[i.id]));
+  const unread = filtered.filter(i => !S.read[i.id]).length;
+  const noun = view === "feed" ? SECS[SEC].noun : "item";
+  const plural = n => n === 1 ? noun : noun === "story" ? "stories" : noun + "s";
+  $("#count").textContent = `${filtered.length.toLocaleString("en-GB")} ${plural(filtered.length)}` + (view === "feed" ? ` · ${unread.toLocaleString("en-GB")} unread` : "") + (wantArchive() ? " · incl. archive" : "");
+  if (!filtered.length) {
+    const msg = {feed: DATA.items.length ? ["Nothing matches", "Try widening the filters, or switch relevance to “+ Borderline”."] : ["No papers yet", "The first update runs shortly. Check back soon."],
+      starred: ["No starred papers", "Tap the star on any paper to keep it here permanently."],
+      hidden: ["Nothing hidden", "Papers you hide with ✕ appear here, so you can bring them back."],
+      tags: ["Empty group", ""]}[view];
+    list.insertAdjacentHTML("beforeend", `<div class="empty"><b>${msg[0]}</b>${msg[1]}</div>`);
+    return;
+  }
+  more();
+}
+function more() {
+  const list = $("#list");
+  const frag = document.createDocumentFragment();
+  filtered.slice(shown, shown + PAGE).forEach((it, k) => {
+    const i = shown + k;
+    if (ALERTN && i === 0) frag.appendChild(Object.assign(document.createElement("div"), {className: "sechead", innerHTML: `<b>●</b> Alerts · ${ALERTN} new`}));
+    if (ALERTN && i === ALERTN) frag.appendChild(Object.assign(document.createElement("div"), {className: "sechead", textContent: "Everything else"}));
+    frag.appendChild(card(it));
+  });
+  shown += PAGE;
+  list.appendChild(frag);
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting && shown < filtered.length) more(); }, {rootMargin: "800px"}).observe($("#sentinel"));
+
+function updateCounts() {
+  const th = DATA.thresholds || {relevant: 4};
+  const unread = DATA.items.filter(i => !S.hidden[i.id] && !S.read[i.id] && i.score >= (P.rel === "relevant" ? th.relevant : th.borderline) && P.journals?.[i.journal]).length;
+  $("#nFeed").textContent = "";
+  const an = SEC === "home" ? Object.values(DATAS).reduce((n, d) => n + alertPinned(d.items).length, 0) : alertPinned().length;
+  $("#acount").textContent = an; $("#acount").classList.toggle("hidden", !an);
+  $("#nStar").textContent = Object.keys(S.starred).length || "";
+  $("#nTags").textContent = new Set(Object.values(S.tags).flat()).size || "";
+  $("#nHid").textContent = Object.keys(S.hidden).length || "";
+  // journal strip with counts for the current filters (ignoring the journal filter itself)
+  const strip = $("#strip");
+  const counts = {};
+  const keep = P.journals; P.journals = new Proxy({}, {get: () => true});
+  const saveView = view; view = "feed";
+  for (const it of apply()) counts[it.journal] = (counts[it.journal] || 0) + 1;
+  view = saveView; P.journals = keep;
+  const en = P._before || P.journals || {};
+  const ids = DATA.journals.filter(j => counts[j.id] && en[j.id]).sort((a, b) => counts[b.id] - counts[a.id]);
+  strip.innerHTML = ids.map(j => `<button class="jchip ${P.solo === j.id ? "on" : ""}" data-j="${j.id}"><i style="background:${j.color}"></i>${esc(j.short)} <b>${counts[j.id]}</b></button>`).join("");
+  strip.classList.toggle("hidden", view !== "feed" || SEC === "home" || !ids.length);
+  let n = 0;
+  if (P.rel !== "relevant") n++; if (P.days || P.from || P.to) n++; if (P.types.length) n++; if (P.topics.length) n++;
+  if (!P.showRead) n++; if (P.oa) n++; if (P.img) n++;
+  if (DATA.journals.some(j => !!P.journals?.[j.id] !== !!j.on)) n++;
+  $("#fcount").textContent = n;
+}
+function drawRange() {
+  const c = SECS[SEC];
+  if (c) $("#range").innerHTML = c.range.map(([d, l]) => `<button data-d="${d}">${l}</button>`).join("");
+  document.querySelectorAll("#range button").forEach(b => b.classList.toggle("on", !P.from && !P.to && +b.dataset.d === P.days));
+  $("#range").classList.toggle("hidden", view !== "feed" || SEC === "home");
+}
+$("#range").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.days = +b.dataset.d; P.from = P.to = ""; saveP(); render(); scrollTo(0, 0); };
+function renderActiveFilters() {
+  drawRange();
+  const a = [];
+  if (P.solo) a.push(J[P.solo]?.short);
+  if (SEC === "home" || view !== "feed") { $("#activef").innerHTML = ""; drawRange(); return; }
+  if (P.days && !(SECS[SEC]?.range || []).some(([d]) => d === P.days)) a.push(P.days === 1 ? "Last 24 h" : P.days === 90 ? "Last 3 months" : P.days === 365 ? "Last 12 months" : `Last ${P.days} days`);
+  if (P.from || P.to) a.push(`${P.from || "…"} → ${P.to || "now"}`);
+  for (const t of P.types) a.push(t);
+  for (const t of P.topics) a.push(t);
+  if (P.oa) a.push("Open access");
+  if (P.img) a.push("With graphic");
+  if (!P.showRead) a.push("Unread only");
+  if (P.rel !== "relevant" && SEC === "lit") a.push("+ Borderline");
+  $("#activef").innerHTML = a.length ? a.map(x => `<span>${esc(x)}</span>`).join("") + `<button id="clearAll">Clear</button>` : "";
+}
+
+/* ------------------------------------------------------------------ actions */
+let undo = null, toastT = 0;
+function toast(msg, undoFn) {
+  $("#toastMsg").textContent = msg;
+  undo = undoFn || null;
+  $("#toastUndo").classList.toggle("hidden", !undoFn);
+  $("#toast").classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => $("#toast").classList.remove("show"), 4500);
+}
+$("#toastUndo").onclick = () => { if (undo) { undo(); undo = null; } $("#toast").classList.remove("show"); };
+const findItem = id => Object.values(DATAS).flatMap(d => d.items).find(i => i.id === id) || S.saved[id] ||
+  Object.values(ARCH.months).flat().find(i => i.id === id);
+function keepSaved(id) {
+  if (S.starred[id] || (S.tags[id] || []).length) { const it = findItem(id); if (it) S.saved[id] = it; }
+  else delete S.saved[id];
+}
+function refreshCard(el) {
+  const it = findItem(el.dataset.id); if (!it) return;
+  el.replaceWith(card(it));
+}
+function removeCard(el) {
+  el.style.transition = "opacity .2s, transform .2s"; el.style.opacity = 0; el.style.transform = "translateX(40px)";
+  setTimeout(() => { el.remove(); filtered = filtered.filter(i => i.id !== el.dataset.id); shown = Math.max(0, shown - 1);
+    $("#count").textContent = `${filtered.length} papers`; updateCounts(); }, 200);
+}
+$("#btnBack").onclick = () => enterSec("home");
+$("#list").addEventListener("click", e => {
+  const tile = e.target.closest(".tile"); if (tile) { enterSec(tile.dataset.sec); return; }
+  const tc = e.target.closest(".tagcard"); if (tc) { tagView = tc.dataset.tag; render(); scrollTo(0, 0); return; }
+  if (e.target.closest("[data-back]")) { tagView = null; render(); return; }
+  const el = e.target.closest(".card"); if (!el) return;
+  const id = el.dataset.id;
+  const a = e.target.closest("[data-a]")?.dataset.a;
+  if (!a) {
+    if (e.target.closest(".authors")) { e.target.closest(".authors").classList.toggle("open"); return; }
+    const abs = el.querySelector(".abs");
+    if (P.compact) {
+      abs?.classList.toggle("hidden");
+      const it = findItem(id);
+      if (el.dataset.lazyimg && !el.querySelector("img.toc")) {
+        const img = document.createElement("img"); img.className = "toc"; img.referrerPolicy = "no-referrer"; img.src = it.imgs[0];
+        img.onerror = () => img.remove(); el.querySelector(".authors, .title").after(img);
+      } else el.querySelector("img.toc")?.remove();
+    } else abs?.classList.toggle("open");
+    return;
+  }
+  if (a === "open") { if (!S.read[id]) { S.read[id] = Date.now(); save(); setTimeout(() => refreshCard(el), 400); updateCounts(); } return; }
+  e.preventDefault();
+  if (a === "star") {
+    if (S.starred[id]) delete S.starred[id]; else S.starred[id] = Date.now();
+    keepSaved(id); save();
+    if (view === "starred" && !S.starred[id]) removeCard(el); else refreshCard(el);
+    updateCounts();
+    toast(S.starred[id] ? "Starred, kept permanently" : "Star removed");
+  } else if (a === "read") {
+    const was = S.read[id];
+    if (was) delete S.read[id]; else S.read[id] = Date.now();
+    save();
+    if (!P.showRead && !was && view === "feed") removeCard(el); else refreshCard(el);
+    updateCounts();
+  } else if (a === "hide") {
+    S.hidden[id] = Date.now(); S.saved[id] = S.saved[id] || findItem(id); save(); removeCard(el);
+    toast("Hidden", () => { delete S.hidden[id]; keepSaved(id); save(); render(); });
+  } else if (a === "unhide") {
+    delete S.hidden[id]; keepSaved(id); save(); removeCard(el); toast("Back in your feed");
+  } else if (a === "tag") openTag(id, el);
+});
+$("#markAll").onclick = () => {
+  const ids = filtered.filter(i => !S.read[i.id]).map(i => i.id);
+  if (!ids.length) return;
+  const t = Date.now(); ids.forEach(id => S.read[id] = t); save(); render();
+  toast(`${ids.length} marked as read`, () => { ids.forEach(id => delete S.read[id]); save(); render(); });
+};
+
+/* ------------------------------------------------------------------ alerts sheet */
+function drawAlerts() {
+  const pool = [...DATA.items, ...Object.values(ARCH.months).flat()];
+  $("#alertList").innerHTML = S.alerts.length ? S.alerts.map((a, i) => {
+    const n = DATA.items.filter(it => !S.hidden[it.id] && alertHits({...it, _a: undefined, title: it.title, abstract: it.abstract}).includes(a)).length;
+    return `<div class="row"><div class="tx"><b data-show="${i}">🔔 ${esc(a)}</b><small>${n} in the latest feed · tap to see all matches</small></div><button class="act" data-del="${i}" aria-label="Delete alert">✕</button></div>`;
+  }).join("") : '<div class="hint">No alerts yet.</div>';
+}
+$("#btnAlerts").onclick = () => { drawAlerts(); openSheet("#shAlerts"); };
+function addAlert() {
+  const v = $("#alertNew").value.trim().slice(0, 80); if (!v) return;
+  if (!S.alerts.some(a => a.toLowerCase() === v.toLowerCase())) S.alerts.push(v);
+  $("#alertNew").value = ""; clearAlertCache(); save(); drawAlerts();
+}
+function clearAlertCache() { for (const k in RXC) delete RXC[k]; for (const it of DATA.items) delete it._a; for (const m of Object.values(ARCH.months)) for (const it of m) delete it._a; }
+$("#alertAdd").onclick = addAlert;
+$("#alertNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addAlert(); } };
+$("#alertList").onclick = e => {
+  const d = e.target.closest("[data-del]");
+  if (d) { S.alerts.splice(+d.dataset.del, 1); clearAlertCache(); save(); drawAlerts(); return; }
+  const sh = e.target.closest("[data-show]");
+  if (sh) { const a = S.alerts[+sh.dataset.show]; $("#q").value = a; P.q = a; saveP(); $("#qclear").classList.remove("hidden"); closeSheet(); }
+};
+
+/* ------------------------------------------------------------------ tag sheet */
+let tagTarget = null, tagEl = null;
+function allTags() { return [...new Set(Object.values(S.tags).flat())].sort((a, b) => a.localeCompare(b)); }
+function drawTagChips() {
+  const mine = S.tags[tagTarget] || [];
+  const names = [...new Set([...allTags(), ...mine])];
+  $("#tagChips").innerHTML = names.length ? names.map(t => `<button class="${mine.includes(t) ? "on" : ""}" data-t="${esc(t)}">${esc(t)}</button>`).join("")
+    : '<span class="hint">No groups yet. Type a name above.</span>';
+}
+function openTag(id, el) {
+  tagTarget = id; tagEl = el;
+  $("#tagFor").textContent = findItem(id)?.title || "";
+  $("#tagNew").value = ""; drawTagChips(); openSheet("#shTag");
+}
+function setTag(t, on) {
+  t = t.trim().slice(0, 40); if (!t) return;
+  const cur = new Set(S.tags[tagTarget] || []);
+  on ? cur.add(t) : cur.delete(t);
+  if (cur.size) S.tags[tagTarget] = [...cur]; else delete S.tags[tagTarget];
+  keepSaved(tagTarget); save(); drawTagChips();
+}
+$("#tagChips").onclick = e => { const b = e.target.closest("button[data-t]"); if (b) setTag(b.dataset.t, !b.classList.contains("on")); };
+$("#tagAdd").onclick = () => { setTag($("#tagNew").value, true); $("#tagNew").value = ""; };
+$("#tagNew").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#tagAdd").click(); } };
+
+/* ------------------------------------------------------------------ sheets */
+let openS = null;
+function openSheet(sel) { $("#toast").classList.remove("show"); openS = $(sel); openS.classList.add("show"); $("#scrim").classList.add("show"); history.pushState({sheet:1}, ""); }
+function closeSheet(fromPop) {
+  if (!openS) return;
+  const wasTag = openS.id === "shTag";
+  openS.classList.remove("show"); $("#scrim").classList.remove("show"); openS = null;
+  if (!fromPop && history.state?.sheet) history.back();
+  if (wasTag) { if (view === "tags" && tagView && !(S.tags[tagTarget] || []).includes(tagView)) render(); else if (tagEl?.isConnected) refreshCard(tagEl); updateCounts(); }
+  else render();
+}
+addEventListener("popstate", () => closeSheet(true));
+$("#scrim").onclick = () => closeSheet();
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeSheet());
+$("#btnFilters").onclick = () => { buildFilterUI(); openSheet("#shFilters"); };
+
+function buildFilterUI() {
+  if (SEC === "home") return;
+  const c = SECS[SEC], lit = SEC === "lit";
+  $("#relBlock").classList.toggle("hidden", !lit); $("#dateBlock").classList.toggle("hidden", !lit);
+  $("#rowOA").classList.toggle("hidden", !lit);
+  document.querySelectorAll(".litonly").forEach(b => b.classList.toggle("hidden", !lit));
+  $("#secType").textContent = c.type; $("#secTopic").textContent = c.topic; $("#secJour").textContent = c.src;
+  document.querySelectorAll("#fRel button").forEach(b => b.classList.toggle("on", b.dataset.v === P.rel));
+  $("#fSort").value = P.sort;
+  document.querySelectorAll("#fDateQuick button").forEach(b => b.classList.toggle("on", !P.from && !P.to && +b.dataset.d === P.days));
+  $("#fFrom").value = P.from; $("#fTo").value = P.to;
+  const types = [...new Set(DATA.items.map(i => i.type))].sort();
+  $("#fTypes").innerHTML = types.map(t => `<button class="${P.types.includes(t) ? "on" : ""}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
+  $("#fTopics").innerHTML = (DATA.topics || []).map(t => `<button class="${P.topics.includes(t) ? "on" : ""}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
+  $("#fShowRead").checked = P.showRead; $("#fOA").checked = P.oa; $("#fImg").checked = P.img; $("#fCompact").checked = P.compact;
+  const groups = lit ? [["Med chem & drug discovery", DATA.journals.filter(j => j.extra || j.core)], ["ChemASAP journals", DATA.journals.filter(j => !j.extra && !j.core)]]
+    : [["", DATA.journals]];
+  $("#fJournals").innerHTML = groups.map(([g, js]) => `<div class="hint" style="margin:10px 0 2px;font-weight:700">${g}</div>` + js.map(j => `
+    <div class="row"><span class="jl" style="background:${j.color}"></span><div class="tx"><b>${esc(j.name)}</b><small>${esc(j.pub)}${lit ? (j.core ? " · all papers shown" : " · drug discovery papers only") : ""}</small></div>
+    <label class="sw"><input type="checkbox" data-j="${j.id}" ${P.journals?.[j.id] ? "checked" : ""}><span></span></label></div>`).join("")).join("");
+}
+$("#fRel").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.rel = b.dataset.v; saveP(); buildFilterUI(); };
+$("#fSort").onchange = e => { P.sort = e.target.value; saveP(); };
+$("#fDateQuick").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.days = +b.dataset.d; P.from = P.to = ""; saveP(); buildFilterUI(); };
+$("#fFrom").onchange = e => { P.from = e.target.value; P.days = 0; saveP(); buildFilterUI(); };
+$("#fTo").onchange = e => { P.to = e.target.value; P.days = 0; saveP(); buildFilterUI(); };
+const toggleIn = (arr, v) => arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v];
+$("#fTypes").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.types = toggleIn(P.types, b.dataset.t); saveP(); b.classList.toggle("on"); };
+$("#fTopics").onclick = e => { const b = e.target.closest("button"); if (!b) return; P.topics = toggleIn(P.topics, b.dataset.t); saveP(); b.classList.toggle("on"); };
+for (const [id, k] of [["#fShowRead", "showRead"], ["#fOA", "oa"], ["#fImg", "img"], ["#fCompact", "compact"]]) $(id).onchange = e => { P[k] = e.target.checked; saveP(); };
+$("#fJournals").onchange = e => { const c = e.target.closest("input[data-j]"); if (!c) return; P.journals[c.dataset.j] = c.checked; P.solo = null; saveP(); };
+$("#fJSel").onclick = e => {
+  const b = e.target.closest("button[data-js]"); if (!b) return;
+  const m = b.dataset.js;
+  for (const j of DATA.journals) P.journals[j.id] = m === "all" ? true : m === "none" ? false : m === "def" ? !!j.on : !!(j.core || j.extra);
+  P.solo = null; saveP(); buildFilterUI();
+};
+$("#fReset").onclick = () => {
+  Object.assign(P, {rel:"relevant", sort:"new", days:0, from:"", to:"", types:[], topics:[], showRead:true, oa:false, img:false, compact:false, solo:null,
+    journals: Object.fromEntries(DATA.journals.map(j => [j.id, !!j.on]))});
+  saveP(); buildFilterUI();
+};
+
+/* journal strip: tap to show only that journal, tap again to undo */
+$("#strip").onclick = e => {
+  const b = e.target.closest(".jchip"); if (!b) return;
+  if (P.solo === b.dataset.j) { P.journals = P._before || P.journals; P.solo = null; delete P._before; }
+  else { if (!P.solo) P._before = {...P.journals}; P.journals = Object.fromEntries(DATA.journals.map(j => [j.id, j.id === b.dataset.j])); P.solo = b.dataset.j; }
+  saveP(); render(); scrollTo(0, 0);
+};
+$("#activef").onclick = e => {
+  if (e.target.id !== "clearAll") return;
+  if (P.solo) { P.journals = P._before || P.journals; P.solo = null; delete P._before; }
+  Object.assign(P, {days:0, from:"", to:"", types:[], topics:[], oa:false, img:false, showRead:true, rel:"relevant"});
+  saveP(); render();
+};
+
+/* search */
+let qT = 0;
+$("#q").value = P.q;
+$("#qclear").classList.toggle("hidden", !P.q);
+$("#q").oninput = e => { clearTimeout(qT); qT = setTimeout(() => { P.q = e.target.value; saveP(); $("#qclear").classList.toggle("hidden", !P.q); render(); }, 220); };
+$("#qclear").onclick = () => { $("#q").value = ""; P.q = ""; saveP(); $("#qclear").classList.add("hidden"); render(); };
+
+/* tabs */
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => {
+  if (b.dataset.view === "feed") { enterSec("home"); return; }
+  view = b.dataset.view; tagView = null;
+  document.querySelectorAll("nav.tabs button").forEach(x => x.classList.toggle("on", x === b));
+  render(); scrollTo(0, 0);
+});
+$("#btnRefresh").onclick = () => load(true);
+
+/* backup */
+$("#btnExport").onclick = () => {
+  const blob = new Blob([JSON.stringify({app:"medchem-asap", exported:new Date().toISOString(), ...S}, null, 1)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `medchem-asap-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("#btnImport").onclick = () => $("#importFile").click();
+$("#importFile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const b = JSON.parse(await f.text());
+    for (const k of ["read", "hidden", "starred", "saved"]) S[k] = Object.assign({}, S[k], b[k] || {});
+    for (const [id, ts] of Object.entries(b.tags || {})) S.tags[id] = [...new Set([...(S.tags[id] || []), ...ts])];
+    S.alerts = [...new Set([...(S.alerts || []), ...(b.alerts || [])])];
+    save(); toast("Backup imported"); render();
+  } catch (err) { toast("That file isn't a valid backup"); }
+  e.target.value = "";
+};
+
+/* auto-refresh when reopened after a while (e.g. on the morning commute) */
+let lastLoad = Date.now();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoad > 30 * 60e3) { lastLoad = Date.now(); load(true); } });
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+load(false);
+</script>
+</body>
+</html>
