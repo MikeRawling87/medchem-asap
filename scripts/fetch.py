@@ -48,7 +48,7 @@ def log(msg):
 
 
 # ---------------------------------------------------------------- http
-def get(url, ua=BROWSER_UA, accept="*/*", timeout=30, tries=2, method="GET"):
+def get(url, ua=BROWSER_UA, accept="*/*", timeout=30, tries=4, method="GET"):
     last = None
     for i in range(tries):
         try:
@@ -60,6 +60,10 @@ def get(url, ua=BROWSER_UA, accept="*/*", timeout=30, tries=2, method="GET"):
             last = e
             if e.code in (403, 404, 410):
                 break
+            if e.code == 429:                       # rate limited (Crossref): wait as asked, then retry
+                wait = e.headers.get("Retry-After") if e.headers else None
+                time.sleep(min(30, float(wait)) if wait and wait.replace(".", "").isdigit() else 4 * (i + 2))
+                continue
         except Exception as e:  # noqa: BLE001
             last = e
         time.sleep(1.5 * (i + 1))
@@ -572,7 +576,7 @@ def main():
     new = []
     if not offline:
         log(f"Fetching {len(JOURNALS)} journals…")
-        with cf.ThreadPoolExecutor(8) as ex:
+        with cf.ThreadPoolExecutor(4) as ex:     # gentle on Crossref's rate limits
             results = list(ex.map(fetch_journal, JOURNALS))
         for j, items in zip(JOURNALS, results):
             stats[j["id"]] = {"fetched": len(items), "new": 0}
