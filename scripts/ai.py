@@ -66,7 +66,7 @@ TOPICS = {
     "Active learning & optimisation": r"active learning|Bayesian optimi|reinforcement learning|closed[- ]loop|"
                                       r"self-driving|autonomous lab",
     "Retrosynthesis & automation": r"retrosynthe|reaction prediction|synthesis planning|robot|automat|self-driving",
-    "Benchmarks & challenges": r"benchmark|blind|leaderboard|\bCASP|\bCACHE\b|Polaris|challenge",
+    "Benchmarks & challenges": r"benchmark|blind (?:challenge|test|prediction)|leaderboard|\bCASP\d*\b|\bCACHE\b|Polaris",
 }
 
 # AI-first drug discovery companies, used for the clinic tracker and deals. Edit freely.
@@ -88,7 +88,7 @@ _sub = [(re.compile(p, re.I), w) for p, w in SUBSTANCE]
 _top = {k: re.compile(v, re.I) for k, v in TOPICS.items()}
 
 
-AI_VENUES = {"dd", "natmi", "natcs", "jcheminf", "jcim"}
+AI_VENUES = {"dd", "natmi", "natcs", "jcheminf"}   # JCIM is broad comp chem, so it must show real AI content
 
 
 def score(title, text, press_release=False, ai_venue=False):
