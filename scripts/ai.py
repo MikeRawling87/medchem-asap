@@ -37,7 +37,9 @@ AI_TERMS = [
     (r"retrosynthe|reaction prediction|synthesis planning", 4),
     (r"free energy perturbation|\bFEP\+?\b|machine[- ]learned (?:potential|force field)|neural network potential|"
      r"\bMLIPs?\b|docking|virtual screening|ultra-large", 3),
-    (r"\bQSAR\b|property prediction|ADMET prediction|predictive model|molecular representation|embedding", 3),
+    (r"property prediction|ADMET prediction|toxicity prediction|predictive model|molecular representation|"
+     r"representation learning|(?:un|self-)?supervised|few-shot|low-data|transfer learning", 4),
+    (r"\bQSAR\b|embedding", 3),
     (r"cheminformatic|computational", 2),
 ]
 DRUG_CONTEXT = re.compile(r"drug|ligand|molecul|protein|binding|ADMET|pharma|therapeut|inhibitor|compound|"
@@ -49,7 +51,7 @@ SUBSTANCE = [
     (r"\bIC50\b|\bnM\b|in vivo|crystal structure|cryo-?EM", 2),
     (r"phase (?:1|2|3|i|ii|iii)\b|clinical trial|\bIND\b|first patient|dosed", 3),
 ]
-HYPE = re.compile(r"revolutioni[sz]|game[- ]chang|transformative|unlock(?:s|ing)? the|supercharg|next[- ]gen(?:eration)? AI|"
+HYPE = re.compile(r"revolutioni[sz]|game[- ]chang|superintelligen|transformative|unlock(?:s|ing)? the|supercharg|next[- ]gen(?:eration)? AI|"
                   r"AI[- ]powered platform", re.I)
 
 TOPICS = {
@@ -79,11 +81,17 @@ COMPANIES = [
 COMP_RX = re.compile(r"\b(?:" + "|".join(re.escape(c) for c in COMPANIES) + r")\b", re.I)
 
 _ai = [(re.compile(p, re.I), w) for p, w in AI_TERMS]
+_core = [rx for rx, w in _ai if w >= 4]          # a genuine AI/ML term must be present
+OFFTOPIC = re.compile(r"quarter(?:ly)? (?:\d{4} )?(?:financial )?results|financial results|earnings|"
+                      r"marketing|commercial(?:i[sz]ation)? team|sales force|\bHCPs?\b|patient engagement", re.I)
 _sub = [(re.compile(p, re.I), w) for p, w in SUBSTANCE]
 _top = {k: re.compile(v, re.I) for k, v in TOPICS.items()}
 
 
-def score(title, text, press_release=False):
+AI_VENUES = {"dd", "natmi", "natcs", "jcheminf", "jcim"}
+
+
+def score(title, text, press_release=False, ai_venue=False):
     full = f"{title} {text}"
     s = 0
     for rx, w in _ai:
@@ -93,8 +101,12 @@ def score(title, text, press_release=False):
             s += w
     if COMP_RX.search(full):
         s += 8 if COMP_RX.search(title) else 4      # AI-first companies count as an AI signal
+    if not ai_venue and not COMP_RX.search(full) and not any(rx.search(full) for rx in _core):
+        return 0
     if s == 0:
         return 0
+    if OFFTOPIC.search(title):
+        s -= 10
     s += sum(w for rx, w in _sub if rx.search(full))
     substance = sum(w for rx, w in _sub if rx.search(full))
     if HYPE.search(full):
@@ -268,14 +280,16 @@ def categorise(it, origin):
     text = f"{it['title']} {it.get('abstract', '')}"
     if origin == "github":
         return "Models & tools"
-    if re.search(r"\bFDA\b|\bEMA\b|regulat|guidance|policy|legislat", text, re.I) and \
-            re.search(r"\bAI\b|artificial intelligence|machine learning", text, re.I) and \
-            re.search(r"guidance|framework|policy|regulat", text, re.I):
+    if re.search(r"\bFDA\b|\bEMA\b|regulator|\bMHRA\b|European Commission", text, re.I) and \
+            re.search(r"\bAI\b|artificial intelligence|machine learning", it["title"], re.I) and \
+            re.search(r"guidance|framework|policy|guideline|reflection paper|regulation of", text, re.I):
         return "Policy"
     if origin in ("clin", "aiclin") or (COMP_RX.search(text) and re.search(
             r"phase (?:1|2|3|i|ii|iii)\b|clinical|first patient|dosed|\bIND\b|topline|readout", text, re.I)):
         return "AI drugs in the clinic"
-    if re.search(r"benchmark|blind (?:challenge|test|prediction)|leaderboard|\bCASP\d*\b|\bCACHE\b|Polaris", text, re.I):
+    if re.search(r"benchmark", it["title"], re.I) or re.search(
+            r"blind (?:challenge|test|prediction)|leaderboard|\bCASP\d*\b|\bCACHE\b|Polaris|community challenge|"
+            r"prospective(?:ly)? (?:evaluat|validat|test)", text, re.I):
         return "Benchmarks"
     if origin == "news":
         return "News & deals"
@@ -323,7 +337,9 @@ def main():
         if x.get("score") == 99 and x["journal"] in ("github", "aiclin"):
             s = 99
         else:
-            s = score(x["title"], text, press_release=(x["journal"] == "prn"))
+            s = score(x["title"], text, press_release=(x["journal"] == "prn"), ai_venue=x["journal"] in AI_VENUES)
+            if x["journal"] in AI_VENUES:
+                s += 3
             if origin == "blogs" and x["journal"] in ("practchem", "owlposting"):
                 s += 3                                     # AI-focused blogs
         if s < THRESH:
@@ -335,6 +351,25 @@ def main():
         x["score"] = 99                                   # the app's relevance filter doesn't apply here
         x["ai_score"] = s
         out.append(x)
+
+    # re-check papers kept from earlier runs against the current rules, so tuning applies retroactively
+    prev_path = os.path.join(DOCS, "ai.json")
+    if os.path.exists(prev_path):
+        prev_d = json.load(open(prev_path))
+        def still_ok(x):
+            if x["journal"] in ("github", "aiclin"):
+                return True
+            v = x["journal"] in AI_VENUES
+            sc = score(x["title"], x.get("abstract", ""), x["journal"] == "prn", v) + (3 if v else 0)
+            return sc >= THRESH
+        prev_d["items"] = [x for x in prev_d["items"] if still_ok(x)]
+        for x in prev_d["items"]:
+            origin = ("news" if x["id"].startswith("n:") else "blogs" if x["id"].startswith("b:") else
+                      "clin" if x["id"].startswith(("cn:", "ct:", "e:", "fda:")) else
+                      x["journal"] if x["journal"] in ("github", "aiclin", "arxiv", "biorxiv") else "lit")
+            x["type"] = categorise(x, origin)
+            x["topics"] = list(dict.fromkeys([x["type"]] + topics(f"{x['title']} {x.get('abstract', '')}")))
+        json.dump(prev_d, open(prev_path, "w"), ensure_ascii=False, separators=(",", ":"))
 
     src_meta = {j["id"]: j for f in ("data", "news", "clinical", "blogs") if os.path.exists(os.path.join(DOCS, f"{f}.json"))
                 for j in json.load(open(os.path.join(DOCS, f"{f}.json")))["journals"]}
